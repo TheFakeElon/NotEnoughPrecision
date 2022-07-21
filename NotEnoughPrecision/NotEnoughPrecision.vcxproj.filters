@@ -18,9 +18,15 @@
     <ClInclude Include="FatFloat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="bitsection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="FatFloat.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bitsection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

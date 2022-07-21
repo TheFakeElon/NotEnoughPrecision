@@ -139,9 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="bitsection.h" />
     <ClInclude Include="FatFloat.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="bitsection.cpp" />
     <ClCompile Include="FatFloat.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

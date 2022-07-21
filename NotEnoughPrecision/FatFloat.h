@@ -1,9 +1,6 @@
 #include <stdint.h>
 #include <cmath>
-
-typedef uint32_t bitsection;
-// length in bits
-#define BITSECTION_LENGTH 32u
+#include "bitsection.h"
 
 class FatFloat
 {
@@ -14,13 +11,9 @@ public:
 	uint8_t sign;
 	uint64_t bias;
 
-	uint32_t exponentBitLength;
-	uint32_t exponentSectionCount;
-	bitsection* exponentBitsectionArray;
+	bitsectionSet exponentSet;
 
-	uint32_t mantissaBitLength;
-	uint32_t mantissaSectionCount;
-	bitsection* mantissaBitsectionArray;
+	bitsectionSet mantissaSet;
 
 	FatFloat& operator = (const FatFloat& FF);
 	bool operator == (const FatFloat& FF);
@@ -31,5 +24,5 @@ public:
 
 private:
 	inline void normalize();
-	inline void sectionSubtract(bitsection* B, bitsection subtract)
+	inline void sectionSubtract(bitsection* B, bitsection subtract);
 };

@@ -3,22 +3,14 @@
 FatFloat::FatFloat(uint32_t expoLength, uint32_t fractLength, uint8_t _sign)
 {
 	sign = _sign;
-	exponentBitLength = expoLength;
-	exponentSectionCount = (exponentBitLength + BITSECTION_LENGTH - 1) / BITSECTION_LENGTH;
-	exponentBitsectionArray = new bitsection(exponentSectionCount);
+	uint32_t sectionLength = (exponentSet.bitCount + BITSECTION_LENGTH - 1u) / BITSECTION_LENGTH;
+	exponentSet = bitsectionSet(sectionLength);
 
-	bias = pow(2u, exponentBitLength - 1) - 1;
+	bias = pow(2u, exponentSet.bitCount - 1) - 1;
 
-	mantissaBitLength = fractLength;
-	mantissaSectionCount = (mantissaBitLength + BITSECTION_LENGTH - 1) / BITSECTION_LENGTH;
-	mantissaBitsectionArray = new bitsection(mantissaSectionCount);
+	sectionLength = (mantissaSet.bitCount + BITSECTION_LENGTH - 1u) / BITSECTION_LENGTH;
+	mantissaSet = bitsectionSet(sectionLength);
 
-}
-
-FatFloat::~FatFloat()
-{
-	delete[] exponentBitsectionArray;
-	delete[] mantissaBitsectionArray;
 }
 
 FatFloat& FatFloat::operator+=(const FatFloat& FF)
@@ -46,10 +38,10 @@ FatFloat& FatFloat::operator+=(const FatFloat& FF)
 FatFloat& FatFloat::operator*=(const FatFloat& FF)
 {
 	sign = sign ^ FF.sign;
-	for (auto i = 0; mantissaSectionCount > i; i++)
+	for (auto i = 0; mantissaSet.count > i; i++)
 	{
-		mantissaBitsectionArray[i] *= FF.mantissaBitsectionArray[i];
-		exponentBitsectionArray[i] += FF.exponentBitsectionArray[i] - FF.bias;
+		mantissaSet[i] *= FF.mantissaSet[i];
+		exponentSet[i] += FF.exponentSet[i] - FF.bias;
 	}
 	
 }
@@ -61,10 +53,11 @@ FatFloat& FatFloat::operator*=(const FatFloat& FF)
 
 inline void FatFloat::normalize()
 {
-	// most significant bit
+	// first array with non-zero bits
 	uint32_t arrayIndex = 0;
+	// most significant bit
 	unsigned long MSB = 0;
-	while (BIT_SCAN(&MSB, mantissaBitsectionArray[arrayIndex]) == 0)
+	while (BIT_SCAN(&MSB, mantissaSet[arrayIndex]) == 0)
 	{
 		arrayIndex++;
 	}
@@ -72,22 +65,23 @@ inline void FatFloat::normalize()
 		return;
 	auto shift = BITSECTION_LENGTH - MSB;
 	// isolate length of "shift" bits starting at "MSB"
-	bitsection carryMask = ((1 << shift) - 1) << MSB;
+	bitsection carryMask = ((1u << shift) - 1u) << MSB;
 	bitsection carry = 0;
 	bitsection sectCache;
-	for (int i = static_cast<int>(mantissaSectionCount) - 1; i >= 0; i--)
+	if (arrayIndex != 0)
 	{
-		sectCache = mantissaBitsectionArray[i];
-		mantissaBitsectionArray[i] = (sectCache << shift) | carry; // shift this bitsection and then apply the carry from the last section
+		for (auto i = arrayIndex; arrayIndex < mantissaSet.count; i++)
+		{
+			mantissaSet[i - arrayIndex] = mantissaSet[i];
+		}
+	}
+	for (int i = static_cast<int>(mantissaSet.count) - 1; i >= 0; i--)
+	{
+		sectCache = mantissaSet[i];
+		mantissaSet[i] = (sectCache << shift) | carry; // shift this bitsection and then apply the carry from the last section
 		carry = (sectCache & carryMask) >> MSB;
 	}
-	arrayIndex = 0;
-	bitsection* bsectionPtr = &exponentBitsectionArray[0];
-	while (*bsectionPtr == 0)
-	{
-		arrayIndex++;
-		bsectionPtr = &exponentBitsectionArray[arrayIndex];
-	}
-	exponentBitsectionArray[exponentSectionCount - 1u] -= shift;
+	// temporarily here
+	//exponentSet[exponentSet.count - 1] -= shift + (32u * arrayIndex);
 
 }
