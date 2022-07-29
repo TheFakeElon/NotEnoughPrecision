@@ -24,5 +24,4 @@ public:
 
 private:
 	inline void normalize();
-	inline void sectionSubtract(bitsection* B, bitsection subtract);
 };

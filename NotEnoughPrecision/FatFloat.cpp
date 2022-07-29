@@ -53,7 +53,7 @@ FatFloat& FatFloat::operator*=(const FatFloat& FF)
 
 inline void FatFloat::normalize()
 {
-	// first array with non-zero bits
+	// first bitsection with non-zero bits
 	uint32_t arrayIndex = 0;
 	// most significant bit
 	unsigned long MSB = 0;
@@ -64,24 +64,16 @@ inline void FatFloat::normalize()
 	if (MSB == 0 || (arrayIndex == 0 && MSB == BITSECTION_LENGTH) )
 		return;
 	auto shift = BITSECTION_LENGTH - MSB;
-	// isolate length of "shift" bits starting at "MSB"
-	bitsection carryMask = ((1u << shift) - 1u) << MSB;
-	bitsection carry = 0;
-	bitsection sectCache;
+	// normalize bitsection positions if we have leading zero sections. We compensate/balance the exponent for this later
 	if (arrayIndex != 0)
 	{
-		for (auto i = arrayIndex; arrayIndex < mantissaSet.count; i++)
+		for (auto i = arrayIndex; i < mantissaSet.count; i++)
 		{
 			mantissaSet[i - arrayIndex] = mantissaSet[i];
+			mantissaSet[i] = 0;
 		}
 	}
-	for (int i = static_cast<int>(mantissaSet.count) - 1; i >= 0; i--)
-	{
-		sectCache = mantissaSet[i];
-		mantissaSet[i] = (sectCache << shift) | carry; // shift this bitsection and then apply the carry from the last section
-		carry = (sectCache & carryMask) >> MSB;
-	}
-	// temporarily here
-	//exponentSet[exponentSet.count - 1] -= shift + (32u * arrayIndex);
+	mantissaSet <<= shift;
+	exponentSet -= shift + (BITSECTION_LENGTH * arrayIndex);
 
 }
