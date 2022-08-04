@@ -2,6 +2,29 @@
 
 const bitsection topBit = 1 << (BITSECTION_LENGTH - 1);
 
+/// ----------- PRIVATE FUNCTIONS -------------
+
+// Add bitsection at specified index and increment other sections if required.
+bitsection bitsectionSet::AddAtSection(bitsection addition, uint32_t index)
+{
+	bitsection presum = sections[index];
+	bitsection sum = presum + addition;
+	bitsection retSum = sum; // the value we return.
+	sections[index] = sum;
+	// if our least significant section overflows, increment next significant section and see if that overflows
+	while (sum < presum && index != 0)
+	{
+		index--;
+		presum = sections[index];
+		sum = presum + 1; // if this overflows again, the while loop will continue
+		sections[index] = sum;
+	}
+	return retSum;
+
+}
+
+/// ----------- PUBLIC FUNCTIONS -------------
+
 inline bitsection& bitsectionSet::operator[](uint32_t index)
 {
 	return sections[index];
@@ -9,19 +32,7 @@ inline bitsection& bitsectionSet::operator[](uint32_t index)
 
 bitsectionSet& bitsectionSet::operator+=(bitsection obs)
 {
-	uint32_t index = count - 1;
-	bitsection presum = sections[index];
-	bitsection sum = presum + obs;
-	sections[index] = sum;
-	// if our least significant section overflows, increment next significant section and see if that overflows
-	while(sum < presum && index != 0)
-	{
-		index--;
-		presum = sections[index];
-		sum = presum + 1; // if this overflows again, the while loop will continue
-		sections[index] = sum;
-	}
-
+	AddAtSection(obs, count - 1);
 	return *this;
 }
 
@@ -60,22 +71,30 @@ bitsectionSet& bitsectionSet::operator-=(bitsection obs)
 
 	return *this;
 }
-// NOT CURRENTLY WORKING. ONLY HANDLES LEAST SIG SECTION
+// Not tested.
 bitsectionSet& bitsectionSet::operator*=(bitsection obs)
 {
-	bitsection sectionCache = sections[count - 1];
-	bitsection res = 0;
-	while (obs != 0)
+	for (uint32_t i = count - 1; i != 0; i--)
 	{
-		if (obs & 1)
+		bitsection* sectionPtr = &sections[i];
+		bitsection sectionCache = *sectionPtr;
+		if (sectionCache == 0)
+			continue;
+		bitsection res = 0;
+		bitsection multiplierMut = obs;
+		while (multiplierMut != 0)
 		{
-			res += sectionCache;
-			sectionCache <<= 1;
-			obs >>= 1;
-		}
-		return *this += res;
+			if (multiplierMut & 1)
+			{
+				res += sectionCache;
+				sectionCache <<= 1;
+				multiplierMut >>= 1;
+			}
+			AddAtSection(res, i);
 
+		}
 	}
+	return *this;
 }
 // NOT CURRENTLY WORKING
 bitsectionSet& bitsectionSet::operator*=(bitsectionSet& obs)
@@ -96,12 +115,13 @@ bitsectionSet& bitsectionSet::operator*=(bitsectionSet& obs)
 	{
 		cachedSection = sections[i];
 		product = cachedSection * obs.sections[i];
-		while()
+		//while()
 		if (product < cachedSection)
 		{
 			
 		}
 	}
+	return *this;
 }
 
 bitsectionSet& bitsectionSet::operator<<=(uint32_t shift)
@@ -111,7 +131,7 @@ bitsectionSet& bitsectionSet::operator<<=(uint32_t shift)
 	bitsection carryMask = ((1u << shift) - 1u) << carryStartBit;
 	bitsection carry = 0;
 	bitsection sectCache;
-	for (int i = count - 1; i >= 0; i--)
+	for (auto i = count - 1; i >= 0; i--)
 	{
 		sectCache = sections[i];
 		sections[i] = (sectCache << shift) | carry; // shift this bitsection and then apply the carry from the last section
@@ -127,7 +147,7 @@ bitsectionSet& bitsectionSet::operator>>=(uint32_t shift)
 	bitsection carryMask = ((1u << shift) - 1u);
 	bitsection carry = 0;
 	bitsection sectCache;
-	for (int i = 0; i < count; i++)
+	for (auto i = 0; i < count; i++)
 	{
 		sectCache = sections[i];
 		sections[i] = (sectCache >> shift) | carry; // shift this bitsection and then apply the carry from the last section

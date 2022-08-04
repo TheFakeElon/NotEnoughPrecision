@@ -1,9 +1,10 @@
 #pragma once
 #include <stdint.h>
+#include <cstring>
 
 typedef uint32_t bitsection;
 // length in bits
-#define BITSECTION_LENGTH 32u
+const uint32_t BITSECTION_LENGTH = sizeof(bitsection) * 8;
 
 struct bitsectionSet
 {
@@ -14,6 +15,20 @@ struct bitsectionSet
 		count = sectionAmt;
 		bitCount = count * BITSECTION_LENGTH;
 		sections = new bitsection[count];
+	}
+	bitsectionSet(bitsection sectionArray[], uint32_t arraySize, bool copyArray)
+	{
+		count = arraySize / sizeof(bitsection);
+		bitCount = count * BITSECTION_LENGTH;
+		if (copyArray)
+		{
+			sections = new bitsection[count];
+			memcpy(sectionArray, sections, arraySize);
+		}
+		else
+		{
+			sections = sectionArray;
+		}
 	}
 	~bitsectionSet() { delete[] sections; }
 
@@ -33,4 +48,6 @@ struct bitsectionSet
 	bitsectionSet& operator<<=(uint32_t shift);
 	bitsectionSet& operator>>=(uint32_t shift);
 	inline bitsection& operator[](uint32_t index);
+private:
+	bitsection AddAtSection(bitsection addition, uint32_t index);
 };
