@@ -2,6 +2,34 @@
 
 const bitsection topBit = 1 << (BITSECTION_LENGTH - 1);
 
+
+// ----------- CONSTRUCTORS -------------
+
+bitsectionSet::bitsectionSet(bitsection sectionArray[], uint32_t arraySize, bool copyArray)
+{
+	count = arraySize / sizeof(bitsection);
+	bitCount = count * BITSECTION_LENGTH;
+	if (copyArray)
+	{
+		sections = new bitsection[count]();
+		memcpy(sectionArray, sections, arraySize);
+	}
+	else
+	{
+		sections = sectionArray;
+	}
+}
+// Duplicator
+bitsectionSet::bitsectionSet(const bitsectionSet& copy)
+{
+	count = copy.count;
+	bitCount = copy.bitCount;
+	sections = new bitsection[count]();
+	memcpy(copy.sections, sections, count * sizeof(bitsection));
+}
+
+
+
 /// ----------- PRIVATE FUNCTIONS -------------
 
 // Add bitsection at specified index and increment other sections if required.
@@ -76,8 +104,7 @@ bitsectionSet& bitsectionSet::operator*=(bitsection obs)
 {
 	for (uint32_t i = count - 1; i != 0; i--)
 	{
-		bitsection* sectionPtr = &sections[i];
-		bitsection sectionCache = *sectionPtr;
+		bitsection sectionCache = sections[i];
 		if (sectionCache == 0)
 			continue;
 		bitsection res = 0;
@@ -87,39 +114,31 @@ bitsectionSet& bitsectionSet::operator*=(bitsection obs)
 			if (multiplierMut & 1)
 			{
 				res += sectionCache;
-				sectionCache <<= 1;
-				multiplierMut >>= 1;
 			}
+			sectionCache <<= 1;
+			multiplierMut >>= 1;
 			AddAtSection(res, i);
 
 		}
 	}
 	return *this;
 }
-// NOT CURRENTLY WORKING
-bitsectionSet& bitsectionSet::operator*=(bitsectionSet& obs)
+// VERY slow. optimize later
+bitsectionSet& bitsectionSet::operator*=(const bitsectionSet& obs)
 {
-	uint32_t index = count - 1;
-	bitsection carry = 0;
-	bitsection cachedSection;
-	bitsection product;
-	while (index != 0)
+	bitsectionSet mutableObs = bitsectionSet(obs);
+	bitsectionSet selfCopy = bitsectionSet(*this);
+	bitsection *LSptr = &mutableObs.sections[count - 1]; // pointer to least significant section
+	bitsection res = 0;
+	while (!mutableObs.isZero())
 	{
-		cachedSection = sections[index];
-		product = cachedSection * obs.sections[index];
-		sections[index] = product + carry;
-		carry = cachedSection - (product >> );
-
-	}
-	for (int i = count - 1; i >= 0; i--)
-	{
-		cachedSection = sections[i];
-		product = cachedSection * obs.sections[i];
-		//while()
-		if (product < cachedSection)
+		if (*LSptr & 1)
 		{
-			
+			*this += selfCopy;
 		}
+		selfCopy <<= 1;
+		mutableObs >>= 1;
+
 	}
 	return *this;
 }
@@ -131,7 +150,7 @@ bitsectionSet& bitsectionSet::operator<<=(uint32_t shift)
 	bitsection carryMask = ((1u << shift) - 1u) << carryStartBit;
 	bitsection carry = 0;
 	bitsection sectCache;
-	for (auto i = count - 1; i >= 0; i--)
+	for (int i = count - 1; i >= 0; i--)
 	{
 		sectCache = sections[i];
 		sections[i] = (sectCache << shift) | carry; // shift this bitsection and then apply the carry from the last section
@@ -156,4 +175,14 @@ bitsectionSet& bitsectionSet::operator>>=(uint32_t shift)
 		carry = (sectCache & carryMask);
 	}
 	return *this;
+}
+
+bool bitsectionSet::isZero()
+{
+	for (auto i = 0; count > i; i++)
+	{
+		if (sections[i] != 0)
+			return false;
+	}
+	return true;
 }

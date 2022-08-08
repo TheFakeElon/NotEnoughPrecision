@@ -16,20 +16,9 @@ struct bitsectionSet
 		bitCount = count * BITSECTION_LENGTH;
 		sections = new bitsection[count];
 	}
-	bitsectionSet(bitsection sectionArray[], uint32_t arraySize, bool copyArray)
-	{
-		count = arraySize / sizeof(bitsection);
-		bitCount = count * BITSECTION_LENGTH;
-		if (copyArray)
-		{
-			sections = new bitsection[count];
-			memcpy(sectionArray, sections, arraySize);
-		}
-		else
-		{
-			sections = sectionArray;
-		}
-	}
+	bitsectionSet(bitsection sectionArray[], uint32_t arraySize, bool copyArray);
+	bitsectionSet(const bitsectionSet& copy);
+
 	~bitsectionSet() { delete[] sections; }
 
 	// variables
@@ -39,15 +28,18 @@ struct bitsectionSet
 	// section[0] = most significant
 	bitsection* sections;
 
+	bool isZero();
+
 	// operator overloads
 	bitsectionSet& operator+=(bitsection obs);
 	bitsectionSet& operator+=(bitsectionSet& obset);
 	bitsectionSet& operator-=(bitsection obs);
 	bitsectionSet& operator*=(bitsection obs);
-	bitsectionSet& operator*=(bitsectionSet& obset);
+	bitsectionSet& operator*=(const bitsectionSet& obset);
 	bitsectionSet& operator<<=(uint32_t shift);
 	bitsectionSet& operator>>=(uint32_t shift);
 	inline bitsection& operator[](uint32_t index);
+	//operator int() const;
 private:
 	bitsection AddAtSection(bitsection addition, uint32_t index);
 };

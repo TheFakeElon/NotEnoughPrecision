@@ -6,7 +6,7 @@ class FatFloat
 {
 public:
 	FatFloat(uint32_t expoLength, uint32_t fractLength, uint8_t _sign);
-	FatFloat(char* numStr)
+	FatFloat(char* digitStr);
 	~FatFloat();
 
 	uint8_t sign;
